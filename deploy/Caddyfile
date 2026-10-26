@@ -1,0 +1,7 @@
+# Modèle VPS : remplacer ce domaine par votre domaine réel.
+# Il doit correspondre exactement à AUTH_ORIGIN=https://votre-domaine.
+# Le DNS et les ports 80/443 doivent pointer vers ce serveur.
+parking.example.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:3000
+}

@@ -1,0 +1,95 @@
+{
+  "duplicates": [
+    {
+      "firstFile": {
+        "end": 216,
+        "endLoc": {
+          "column": 11,
+          "line": 216,
+          "position": 8553
+        },
+        "name": "lib/pdf.js",
+        "start": 202,
+        "startLoc": {
+          "column": 54,
+          "line": 202,
+          "position": 7995
+        }
+      },
+      "format": "javascript",
+      "fragment": "  const doc = new jsPDF({ unit: 'mm', format: [80, 160] })\n  const W = doc.internal.pageSize.getWidth()\n  const cur = lot.currency || 'XOF'\n  const logo = await toPngDataUrl(lot.logo)\n  doc.setFillColor(...INK)\n  doc.rect(0, 0, W, 26, 'F')\n  if (logo) { try { doc.addImage(logo, 'PNG', W / 2 - 6, 3, 12, 12) } catch {} }\n  doc.setTextColor(255, 255, 255)\n  doc.setFont('helvetica', 'bold')\n  doc.setFontSize(9)\n  doc.text((lot.name || 'Mon Parking').slice(0, 30), W / 2, logo ? 20 : 12, { align: 'center' })\n  doc.setFont('helvetica', 'normal')\n  doc.setFontSize(6.2)\n  doc.setTextColor(198, 242, 78)\n  doc.text('REÇU DE PAIEMENT', W / 2, 24, { align: 'center' })",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 15,
+      "secondFile": {
+        "end": 339,
+        "endLoc": {
+          "column": 11,
+          "line": 339,
+          "position": 13145
+        },
+        "name": "lib/pdf.js",
+        "start": 325,
+        "startLoc": {
+          "column": 54,
+          "line": 325,
+          "position": 12587
+        }
+      },
+      "tokens": 173
+    }
+  ],
+  "statistics": {
+    "detectionDate": "2026-10-20T15:27:28.501Z",
+    "formats": {
+      "css": {
+        "clones": 0,
+        "duplicatedLines": 0,
+        "duplicatedTokens": 0,
+        "lines": 467,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.0,
+        "percentageTokens": 0.0,
+        "sources": 3,
+        "tokens": 15288
+      },
+      "javascript": {
+        "clones": 1,
+        "duplicatedLines": 15,
+        "duplicatedTokens": 173,
+        "lines": 3863,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.38829924928811804,
+        "percentageTokens": 0.3708387815909627,
+        "sources": 24,
+        "tokens": 46651
+      },
+      "jsx": {
+        "clones": 0,
+        "duplicatedLines": 0,
+        "duplicatedTokens": 0,
+        "lines": 5931,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.0,
+        "percentageTokens": 0.0,
+        "sources": 27,
+        "tokens": 89122
+      }
+    },
+    "total": {
+      "clones": 1,
+      "duplicatedLines": 15,
+      "duplicatedTokens": 173,
+      "lines": 10261,
+      "newClones": 0,
+      "newDuplicatedLines": 0,
+      "percentage": 0.1461845823993763,
+      "percentageTokens": 0.11452327205565963,
+      "sources": 54,
+      "tokens": 151061
+    }
+  }
+}

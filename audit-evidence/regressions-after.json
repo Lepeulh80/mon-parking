@@ -1,0 +1,86 @@
+[
+  {
+    "id": "B01",
+    "file": "src/lib/admin.js:createAdditionalLot",
+    "cause": "Requête sur ownerKey non indexé",
+    "pass": true
+  },
+  {
+    "id": "B02",
+    "file": "src/lib/db.js:returnRental",
+    "cause": "Aucune vérification du type de document",
+    "pass": true
+  },
+  {
+    "id": "B03",
+    "file": "src/lib/db.js:returnRental",
+    "cause": "Absence de contrôle des droits et du parking",
+    "pass": true
+  },
+  {
+    "id": "B04",
+    "file": "src/lib/db.js:deleteSale",
+    "cause": "Suppression de règlements sans contrepassation de caisse",
+    "pass": true
+  },
+  {
+    "id": "B05",
+    "file": "src/lib/db.js:createSale",
+    "cause": "Totaux validés puis stockés dans leur type initial",
+    "pass": true
+  },
+  {
+    "id": "B06",
+    "file": "src/lib/parking.js:checkInReservation",
+    "cause": "Place réservée refusée par createTicket, qui exige libre",
+    "pass": true
+  },
+  {
+    "id": "B07",
+    "file": "src/lib/parking.js:saveReservation",
+    "cause": "Identifiant de place d’un autre parking accepté",
+    "pass": true
+  },
+  {
+    "id": "B08",
+    "file": "src/lib/parking.js:saveReservation",
+    "cause": "Période inversée acceptée",
+    "pass": true
+  },
+  {
+    "id": "B09",
+    "file": "src/lib/match.js:makeCostFn",
+    "cause": "Un coût appris de 0,45 augmente le coût visuel initial de 0,25",
+    "pass": true
+  },
+  {
+    "id": "B10",
+    "file": "src/lib/financeHub.js:parseCSV",
+    "cause": "Montant vide transformé en zéro par Number(\"\")",
+    "pass": true
+  },
+  {
+    "id": "B11",
+    "file": "src/lib/securityHub.js:requestIntegration",
+    "cause": "payload.provider écrase le prestataire validé",
+    "pass": true
+  },
+  {
+    "id": "B12",
+    "file": "src/lib/parking.js:parkingStats",
+    "cause": "Jour civil comparé à une date UTC",
+    "pass": true
+  },
+  {
+    "id": "B13",
+    "file": "src/lib/parkingSync.js:slot merge",
+    "cause": "Tout ticket pending bloque toutes les places",
+    "pass": true
+  },
+  {
+    "id": "B14",
+    "file": "src/lib/parkingSync.js:receipt confirmation",
+    "cause": "pendingCloud jamais acquitté avec le total serveur : double comptage",
+    "pass": true
+  }
+]

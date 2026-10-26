@@ -1,0 +1,56 @@
+CORRECTIF SESSIONS — MON PARKING v11 après correctif de concurrence PIN
+
+Le patch se base sur la v11 avec correctif PIN livrée précédemment, pas sur la v10.
+Lire la section « Correctif sessions serveur » de README.md avant lancement.
+Le projet complet contient le serveur réel Node + SQLite, les sources client,
+les tests HTTP/navigateur, la configuration et package-lock.json.
+
+Cause : aucun serveur de sessions n’existait. mp_session contenait seulement
+userId/lotId et suffisait à restaurer une session. Le changement de PIN ne révoquait
+pas ce pseudo-justificatif. Le durcissement ne repose donc pas sur un simple drapeau local.
+
+Serveur : identifiant opaque aléatoire 256 bits, empreinte serveur uniquement,
+SQLite persistant, cookie __Host-mp_sid HttpOnly/Secure/SameSite=Strict avec échéance
+absolue 8 heures, rotation à la connexion, suppression au logout, génération et
+révocation des sessions du principal à chaque changement/réinitialisation de PIN.
+Chaque route API protégée vérifie l’existence du jeton, l’expiration, la génération,
+l’état actif et les rôles/parkings selon l’opération. Pas de confiance dans localStorage.
+
+Lancement : Node 22.23+ (24 recommandé), npm ci, npm run build, provisionnement
+serveur via npm run auth:setup ou auth:import puis AUTH_ORIGIN=... npm start.
+HTTPS obligatoire en production ; HTTP est limité à localhost/loopback pour les tests.
+Le serveur de production ne crée aucun compte démo. Les scripts de fixtures sont
+réservés aux tests ; ne jamais les employer comme serveur de production.
+Les données SQLite et clés privées sont exclues de cette archive et de git.
+
+Application à la base v11 relue : git apply --check session-revocation-fix.patch
+puis git apply session-revocation-fix.patch. L’application et le contenu des fichiers
+obtenus ont été vérifiés sur une copie propre de la base pré-correctif.
+
+Tests exécutés : npm run test:all (0), npm run test:pin (0), npm audit (0).
+Le test de revue de sécurité est intégré aux tests navigateur et réussit (5/0).
+21 contrôles serveur, 3 contrôles de preuve persistante et 53 contrôles navigateur
+historiques réussissent ; les 10 scénarios du correctif PIN restent réussis.
+
+Preuves AVANT : PERSISTED PROOF: 0 passed / 3 failed, exit 1 ; revue formelle exit 1.
+Le contrat HTTP échouait aussi car aucun serveur d’authentification n’existait.
+Cinq contrôles internes SQLite ne pouvaient pas être exécutés sur l’ancienne version
+sans stockage serveur : journal explicitement NOT_APPLICABLE, jamais comptés comme
+réussites antérieures. Ils sont tous exécutés sur le nouveau serveur réel.
+Le test de cookie effacé par une réponse 401 tardive a aussi échoué avant sa correction.
+Preuves APRÈS : SERVER SESSION: 21 passed / 0 failed ; PERSISTED PROOF: 3 passed / 0 failed ;
+SESSION SECURITY BROWSER: 5 passed / 0 failed ; TEST_ALL_AFTER_EXIT=0.
+
+Changement de comportement assumé : sans validation serveur, accès verrouillé,
+y compris au rechargement hors ligne. Les données locales ne sont pas effacées.
+Les autres onglets sont revalidés par événements et polling de 2 secondes ;
+le refus serveur est immédiat après révocation.
+
+Périmètre : service d’authentification mono-instance avec fichier SQLite persistant.
+Pour HA/multi-instance, remplacer par un stockage transactionnel central partagé.
+Les domaines d’authentification Supabase existants restent distincts ; le correctif
+ne prétend ni révoquer globalement leurs JWT ni déplacer les finances locales sur
+un serveur transactionnel, ni rendre IndexedDB chiffré/inviolable.
+Les rapports généraux AUDIT/CHANGELOG sont antérieurs ; cette notice et README
+complètent les nouveaux tests. Aucune validation sur votre infrastructure réelle
+ou certification de sécurité globale n’est revendiquée.

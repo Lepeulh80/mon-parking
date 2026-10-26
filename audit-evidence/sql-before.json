@@ -1,0 +1,16 @@
+[
+  {
+    "id": "B16",
+    "file": "migrations/010_12_personal_preferences_vault.sql:28",
+    "cause": "Enveloppe acceptée sans nonce, sel ni ciphertext",
+    "pass": false,
+    "error": "Missing expected rejection."
+  },
+  {
+    "id": "B15",
+    "file": "supabase_schema.sql:108-129",
+    "cause": "Helpers invoker relisant memberships protégée par ces mêmes helpers",
+    "pass": false,
+    "error": "Expected values to be strictly equal:\n\n0 !== 1\n"
+  }
+]

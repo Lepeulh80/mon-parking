@@ -1,0 +1,22 @@
+# Blueprint Render — offre gratuite.
+# ATTENTION : sur le plan gratuit, le disque est éphémère et le service
+# s'endort après 15 min sans trafic. La base SQLite est donc recréée à chaque
+# redéploiement/réveil : il faut relancer le provisionnement de l'admin.
+services:
+  - type: web
+    name: mon-parking
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_ORIGIN
+        sync: false          # à saisir : https://mon-parking.onrender.com
+      - key: HOST
+        value: 0.0.0.0
+      - key: AUTH_TRUST_PROXY
+        value: "1"
+      - key: AUTH_DB
+        value: /app/.server-data/auth.sqlite

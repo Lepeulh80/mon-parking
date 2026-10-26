@@ -1,0 +1,113 @@
+{
+  "method": "AST TypeScript + inventaire des références lexicales src/tests. Inventaire prudent, pas preuve de couverture runtime.",
+  "candidates": [
+    {
+      "file": "src/components/Charts.jsx",
+      "line": 141,
+      "export": "Spark",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/components/UI.jsx",
+      "line": 164,
+      "export": "Progress",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/components/UI.jsx",
+      "line": 172,
+      "export": "StatRow",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/admin.js",
+      "line": 168,
+      "export": "nextDocPreview",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/analytics.js",
+      "line": 3,
+      "export": "PAID",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/db.js",
+      "line": 321,
+      "export": "logAction",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/db.js",
+      "line": 326,
+      "export": "saleStats",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/format.js",
+      "line": 20,
+      "export": "fmtPct",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/format.js",
+      "line": 28,
+      "export": "fmtDateLong",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/format.js",
+      "line": 38,
+      "export": "isoDay",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/format.js",
+      "line": 40,
+      "export": "monthLabel",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/learning.js",
+      "line": 27,
+      "export": "MAX_EVENTS_KEPT",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/ocr.js",
+      "line": 179,
+      "export": "preprocessForOcr",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/ocr.js",
+      "line": 239,
+      "export": "terminateOcr",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/ocrSync.js",
+      "line": 69,
+      "export": "getSyncState",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/parking.js",
+      "line": 238,
+      "export": "deleteReservation",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/pdf.js",
+      "line": 273,
+      "export": "openDoc",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    },
+    {
+      "file": "src/lib/plate.js",
+      "line": 307,
+      "export": "PLATE_EXAMPLES",
+      "decision": "conserver API publique : suppression non requise pour corriger les bugs"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+# Dépendances
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+dist-ssr/
+*.local
+
+# Secrets — NE JAMAIS COMMITTER
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.key
+*.pem
+auth-store.key
+AUTH_2FA_KEY*
+
+# Base SQLite locale et fichiers WAL
+.server-data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+
+# Journaux et divers
+*.log
+npm-debug.log*
+.DS_Store
+coverage/
+.vite/
+audit-evidence-v*/
+*.tmp
+
+# Éditeurs
+.vscode/
+!.vscode/extensions.json
+.idea/

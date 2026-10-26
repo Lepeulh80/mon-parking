@@ -1,0 +1,17 @@
+file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/oxc-parser/src-js/raw-transfer/common.js:294
+  const arrayBuffer = new ArrayBuffer(ARRAY_BUFFER_SIZE);
+                      ^
+
+RangeError: Array buffer allocation failed
+    at new ArrayBuffer (<anonymous>)
+    at createBuffer (file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/oxc-parser/src-js/raw-transfer/common.js:294:23)
+    at prepareRaw (file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/oxc-parser/src-js/raw-transfer/common.js:208:55)
+    at parseSyncRawImpl (file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/oxc-parser/src-js/raw-transfer/common.js:42:53)
+    at parseSyncRaw (file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/oxc-parser/src-js/raw-transfer/eager.js:16:10)
+    at parseSync (file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/oxc-parser/src-js/index.js:60:12)
+    at parseFile (file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/knip/dist/typescript/ast-nodes.js:13:12)
+    at runPlugin (file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/knip/dist/WorkspaceWorker.js:348:47)
+    at async WorkspaceWorker.runPlugins (file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/knip/dist/WorkspaceWorker.js:428:33)
+    at async build (file:///opt/npm-cache/_npx/8d873e0e769cf1b4/node_modules/knip/dist/graph/build.js:181:35)
+
+Node.js v22.23.3

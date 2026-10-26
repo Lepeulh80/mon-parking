@@ -1,0 +1,26 @@
+[
+  {
+    "id": "B16",
+    "file": "migrations/010_12_personal_preferences_vault.sql:28",
+    "cause": "Enveloppe acceptée sans nonce, sel ni ciphertext",
+    "pass": true
+  },
+  {
+    "id": "SQL_VALID_VAULT",
+    "file": "migrations/011_13_audit_integrity.sql",
+    "cause": "Enveloppe complète autorisée ; MFA et isolation inchangés",
+    "pass": true
+  },
+  {
+    "id": "B15",
+    "file": "supabase_schema.sql:108-129",
+    "cause": "Helpers invoker relisant memberships protégée par ces mêmes helpers",
+    "pass": true
+  },
+  {
+    "id": "SQL_NO_CROSS_LOT",
+    "file": "migrations/011_13_audit_integrity.sql",
+    "cause": "Accès anonyme et autre parking refusés",
+    "pass": true
+  }
+]

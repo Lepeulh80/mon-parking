@@ -1,0 +1,100 @@
+[
+  {
+    "id": "B01",
+    "file": "src/lib/admin.js:createAdditionalLot",
+    "cause": "Requête sur ownerKey non indexé",
+    "pass": false,
+    "error": "KeyPath ownerKey on object store lots is not indexed"
+  },
+  {
+    "id": "B02",
+    "file": "src/lib/db.js:returnRental",
+    "cause": "Aucune vérification du type de document",
+    "pass": false,
+    "error": "Missing expected rejection."
+  },
+  {
+    "id": "B03",
+    "file": "src/lib/db.js:returnRental",
+    "cause": "Absence de contrôle des droits et du parking",
+    "pass": false,
+    "error": "Missing expected rejection."
+  },
+  {
+    "id": "B04",
+    "file": "src/lib/db.js:deleteSale",
+    "cause": "Suppression de règlements sans contrepassation de caisse",
+    "pass": false,
+    "error": "Missing expected rejection."
+  },
+  {
+    "id": "B05",
+    "file": "src/lib/db.js:createSale",
+    "cause": "Totaux validés puis stockés dans leur type initial",
+    "pass": false,
+    "error": "Expected values to be strictly equal:\n\n'string' !== 'number'\n"
+  },
+  {
+    "id": "B06",
+    "file": "src/lib/parking.js:checkInReservation",
+    "cause": "Place réservée refusée par createTicket, qui exige libre",
+    "pass": false,
+    "error": "La place A00 n’est pas libre."
+  },
+  {
+    "id": "B07",
+    "file": "src/lib/parking.js:saveReservation",
+    "cause": "Identifiant de place d’un autre parking accepté",
+    "pass": false,
+    "error": "Missing expected rejection."
+  },
+  {
+    "id": "B08",
+    "file": "src/lib/parking.js:saveReservation",
+    "cause": "Période inversée acceptée",
+    "pass": false,
+    "error": "Missing expected rejection."
+  },
+  {
+    "id": "B09",
+    "file": "src/lib/match.js:makeCostFn",
+    "cause": "Un coût appris de 0,45 augmente le coût visuel initial de 0,25",
+    "pass": false,
+    "error": "The expression evaluated to a falsy value:\n\n  assert(plateScore(raw,stored,learning).score>=before.score)\n"
+  },
+  {
+    "id": "B10",
+    "file": "src/lib/financeHub.js:parseCSV",
+    "cause": "Montant vide transformé en zéro par Number(\"\")",
+    "pass": false,
+    "error": "Missing expected exception."
+  },
+  {
+    "id": "B11",
+    "file": "src/lib/securityHub.js:requestIntegration",
+    "cause": "payload.provider écrase le prestataire validé",
+    "pass": false,
+    "error": "Expected values to be strictly equal:\n\n'dropbox' !== 'bank'\n"
+  },
+  {
+    "id": "B12",
+    "file": "src/lib/parking.js:parkingStats",
+    "cause": "Jour civil comparé à une date UTC",
+    "pass": false,
+    "error": "Expected values to be strictly equal:\n\n0 !== 1\n"
+  },
+  {
+    "id": "B13",
+    "file": "src/lib/parkingSync.js:slot merge",
+    "cause": "Tout ticket pending bloque toutes les places",
+    "pass": false,
+    "error": "Expected values to be strictly equal:\n\n'occupe' !== 'libre'\n"
+  },
+  {
+    "id": "B14",
+    "file": "src/lib/parkingSync.js:receipt confirmation",
+    "cause": "pendingCloud jamais acquitté avec le total serveur : double comptage",
+    "pass": false,
+    "error": "Expected values to be strictly equal:\n\n2000 !== 1500\n"
+  }
+]

@@ -1,0 +1,25 @@
+# Modèle systemd Linux. Vérifier le chemin /usr/bin/node avec command -v node.
+[Unit]
+Description=MON PARKING v12
+After=network.target
+
+[Service]
+Type=simple
+User=monparking
+Group=monparking
+WorkingDirectory=/opt/mon-parking
+ExecStart=/usr/bin/node --env-file-if-exists=.env server/start.mjs
+Environment=NODE_ENV=production
+Restart=on-failure
+RestartSec=3
+StateDirectory=mon-parking
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/mon-parking
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
