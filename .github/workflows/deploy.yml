@@ -18,6 +18,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# La concurrence ci-* annule un run en cours : correct pour lint/build/test,
+# dangereux pour un deploiement deja engage. Les jobs de publication portent
+# donc leur propre groupe (voir plus bas) avec cancel-in-progress: false.
+
 permissions:
   contents: read
 
@@ -28,6 +32,7 @@ jobs:
   test:
     name: Tests (Vitest)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,11 +49,23 @@ jobs:
       # « vitest run » et non « vitest » : la commande nue demarre en mode
       # surveillance et bloquerait la CI jusqu'au timeout du job.
       - name: Tests unitaires
-        run: npm test
+        run: npm test -- --reporter=default --reporter=junit --outputFile.junit=vitest-report.xml
+
+      # if: always() : le rapport doit etre recuperable MEME quand les tests
+      # echouent, sinon on ne dispose que du code de sortie.
+      - name: Archiver le rapport de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-report
+          path: vitest-report.xml
+          retention-days: 7
+          if-no-files-found: warn
 
   build:
     name: Build Vite
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -96,6 +113,10 @@ jobs:
     needs: [build, test]
     if: github.event_name != 'pull_request' && vars.PAGES_ENABLED == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-pages
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write
@@ -112,6 +133,10 @@ jobs:
     needs: [build, test]
     if: github.event_name == 'push' && vars.DEPLOY_HOOK_ENABLED == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: deploy-node
+      cancel-in-progress: false
     steps:
       - name: Appeler le webhook de déploiement
         env:
