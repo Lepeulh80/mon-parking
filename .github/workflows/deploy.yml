@@ -1,0 +1,112 @@
+# MON PARKING — build Vite et publication automatique.
+#
+# Deux destinations, volontairement séparées :
+#   * GitHub Pages : la coque statique (dist/), utile pour vérifier un build et
+#     montrer l'interface. L'authentification n'y fonctionne PAS : elle exige le
+#     serveur Node (server/start.mjs) et ses routes /api.
+#   * l'hébergeur Node (Render/Railway/VM) : seule cible réellement exploitable.
+#     Elle est déclenchée par un secret de déploiement, si vous en avez créé un.
+
+name: Build & deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Un seul déploiement à la fois ; une poussée plus récente annule la précédente.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  build:
+    name: Build Vite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # npm ci (et non install) : respecte package-lock.json à la lettre, donc
+      # une dépendance compromise ou déplacée fait échouer la CI au lieu de
+      # passer silencieusement.
+      - name: Installer les dépendances
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      # Le build doit produire un service worker et un manifeste : sans eux la
+      # PWA n'est pas installable sur Android, et l'erreur serait silencieuse.
+      - name: Vérifier les artefacts PWA
+        run: |
+          test -f dist/index.html      || { echo "dist/index.html absent"; exit 1; }
+          test -f dist/sw.js           || { echo "dist/sw.js absent"; exit 1; }
+          test -f dist/manifest.webmanifest || { echo "manifest absent"; exit 1; }
+          echo "Artefacts PWA présents :"
+          ls -lh dist/index.html dist/sw.js dist/manifest.webmanifest
+
+      # Repli SPA : les routes sont en #/… donc inutile en théorie, mais un lien
+      # direct vers /stock sans dièse tomberait sinon sur la 404 de GitHub.
+      - name: Repli 404.html
+        run: cp dist/index.html dist/404.html
+
+      - name: Archiver dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: mon-parking-dist
+          path: dist
+          retention-days: 14
+
+      - name: Préparer l'artefact Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy-pages:
+    name: Publier sur GitHub Pages
+    needs: build
+    # Ne s'exécute que si Pages est activé sur le dépôt (variable PAGES_ENABLED)
+    # et jamais depuis une pull request. Sans cela le job serait ignoré au lieu
+    # d'échouer, ce qui laisse la CI verte sur un dépôt où Pages n'est pas activé.
+    if: github.event_name != 'pull_request' && vars.PAGES_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Déployer
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-node:
+    name: Déclencher l'hébergeur Node
+    needs: build
+    if: github.event_name == 'push' && secrets.DEPLOY_HOOK_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Appeler le webhook de déploiement
+        run: |
+          curl --fail --silent --show-error --max-time 30 \
+            -X POST "${{ secrets.DEPLOY_HOOK_URL }}" \
+            -o /dev/null -w 'webhook HTTP %{http_code}\n'
