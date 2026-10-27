@@ -15,7 +15,7 @@ const ok = (cond, label) => { if (cond) { pass++; console.log('  OK  ' + label) 
 const auth = await PgAuthStore.open({ connectionString: url, autoMigrate: true })
 ok(true, 'schéma appliqué (auth + métier)')
 
-const boot = await bootstrapAdmin(auth, {}, { log: () => {} })
+const boot = await bootstrapAdmin(auth, process.env, { log: () => {} })
 let lotId
 if (boot.created) { lotId = boot.lotId; ok(true, 'base vide : administrateur amorcé') }
 else {

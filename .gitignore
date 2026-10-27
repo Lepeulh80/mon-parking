@@ -38,3 +38,9 @@ audit-evidence-v*/
 .vscode/
 !.vscode/extensions.json
 .idea/
+
+# Secrets locaux
+.env
+.env.*
+!.env.example
+!.env.neon.example
