@@ -1,13 +1,11 @@
-# MON PARKING — build Vite et publication automatique.
+# MON PARKING — tests, build Vite et publication.
 #
-# Deux destinations, volontairement séparées :
-#   * GitHub Pages : la coque statique (dist/), utile pour vérifier un build et
-#     montrer l'interface. L'authentification n'y fonctionne PAS : elle exige le
-#     serveur Node (server/start.mjs) et ses routes /api.
-#   * l'hébergeur Node (Render/Railway/VM) : seule cible réellement exploitable.
-#     Elle est déclenchée par un secret de déploiement, si vous en avez créé un.
+# Chaîne : build (parallèle) + test (Vitest) -> deploiements.
+# Les deux jobs de deploiement portent « needs: [build, test] » : un seul test
+# en échec les rend « skipped », donc rien n'est publié. Aucun continue-on-error
+# n'est present, volontairement.
 
-name: Build & deploy
+name: Tests, build & deploy
 
 on:
   push:
@@ -16,9 +14,8 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Un seul déploiement à la fois ; une poussée plus récente annule la précédente.
 concurrency:
-  group: pages-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -28,6 +25,27 @@ env:
   NODE_VERSION: '24'
 
 jobs:
+  test:
+    name: Tests (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci --no-audit --no-fund
+
+      # « vitest run » et non « vitest » : la commande nue demarre en mode
+      # surveillance et bloquerait la CI jusqu'au timeout du job.
+      - name: Tests unitaires
+        run: npm test
+
   build:
     name: Build Vite
     runs-on: ubuntu-latest
@@ -41,9 +59,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      # npm ci (et non install) : respecte package-lock.json à la lettre, donc
-      # une dépendance compromise ou déplacée fait échouer la CI au lieu de
-      # passer silencieusement.
       - name: Installer les dépendances
         run: npm ci --no-audit --no-fund
 
@@ -53,8 +68,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Le build doit produire un service worker et un manifeste : sans eux la
-      # PWA n'est pas installable sur Android, et l'erreur serait silencieuse.
       - name: Vérifier les artefacts PWA
         run: |
           test -f dist/index.html      || { echo "dist/index.html absent"; exit 1; }
@@ -63,8 +76,6 @@ jobs:
           echo "Artefacts PWA présents :"
           ls -lh dist/index.html dist/sw.js dist/manifest.webmanifest
 
-      # Repli SPA : les routes sont en #/… donc inutile en théorie, mais un lien
-      # direct vers /stock sans dièse tomberait sinon sur la 404 de GitHub.
       - name: Repli 404.html
         run: cp dist/index.html dist/404.html
 
@@ -82,10 +93,7 @@ jobs:
 
   deploy-pages:
     name: Publier sur GitHub Pages
-    needs: build
-    # Ne s'exécute que si Pages est activé sur le dépôt (variable PAGES_ENABLED)
-    # et jamais depuis une pull request. Sans cela le job serait ignoré au lieu
-    # d'échouer, ce qui laisse la CI verte sur un dépôt où Pages n'est pas activé.
+    needs: [build, test]
     if: github.event_name != 'pull_request' && vars.PAGES_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -99,13 +107,9 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  # Le contexte « secrets » n'est PAS autorisé dans jobs.<id>.if : l'utiliser
-  # rendait le fichier entier invalide, et le run échouait sans aucun job.
-  # On conditionne donc sur une variable de dépôt, puis on teste le secret
-  # dans l'étape où le contexte est permis.
   deploy-node:
     name: Déclencher l'hébergeur Node
-    needs: build
+    needs: [build, test]
     if: github.event_name == 'push' && vars.DEPLOY_HOOK_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
