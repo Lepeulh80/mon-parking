@@ -1,12 +1,22 @@
 import { AuthStore } from './auth-store.mjs'
+import { PgAuthStore } from './auth-store-pg.mjs'
+import { PgBusinessStore } from './business-store-pg.mjs'
 import { createAuthServer } from './http.mjs'
 import { deploymentConfig } from './config.mjs'
 import { bootstrapAdmin } from './bootstrap.mjs'
 try {
  const config=deploymentConfig()
- const store=new AuthStore(config.dbPath)
+ // DATABASE_URL renseigné => PostgreSQL (Neon/Render), sinon SQLite local.
+ // PG_AUTO_MIGRATE=0 est obligatoire derrière un pooler : le DDL y est refusé,
+ // les migrations se lancent alors avec `npm run db:migrate`.
+ const usePg=!!String(process.env.DATABASE_URL||'').trim()
+ const store=usePg
+  ?await PgAuthStore.open({connectionString:process.env.DATABASE_URL,autoMigrate:String(process.env.PG_AUTO_MIGRATE||'1')!=='0',secretAnchor:process.cwd()})
+  :new AuthStore(config.dbPath)
+ const business=usePg?new PgBusinessStore(store.sql===undefined?undefined:store._sql,async()=>{}):null
+ console.log(usePg?'Base : PostgreSQL (DATABASE_URL)':'Base : SQLite locale ('+config.dbPath+')')
  await bootstrapAdmin(store)
- const server=createAuthServer({store,origin:config.origin,distDir:config.distDir,tls:config.tls})
+ const server=createAuthServer({store,origin:config.origin,distDir:config.distDir,tls:config.tls,business})
  server.requestTimeout=15000;server.headersTimeout=10000
  // m9 : une erreur de listen fermait la base, puis SIGTERM la refermait et
  // levait « database is not open » dans le gestionnaire de signal.

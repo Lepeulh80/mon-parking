@@ -34,7 +34,7 @@ export const CSP=[
  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com",
  "manifest-src 'self'",
 ].join('; ')
-export function createAuthServer({store,origin,distDir=null,tls}){
+export function createAuthServer({store,origin,distDir=null,tls,business}){
  const expected=new URL(origin)
  if(expected.pathname!=='/'||!['https:','http:'].includes(expected.protocol))throw new Error('AUTH_ORIGIN must be an origin')
  if(expected.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(expected.hostname))throw new Error('HTTPS required outside loopback')
@@ -133,6 +133,22 @@ export function createAuthServer({store,origin,distDir=null,tls}){
     if(url.pathname==='/api/auth/switch-lot'&&req.method==='POST'){
      const input=await body(req),{token:fresh,expires,...identity}=store.switchLot(token,input.lotId)
      setCookie(res,fresh,expires);return json(res,200,identity)
+    }
+    if(business&&url.pathname.startsWith('/api/data/')){
+     // Lecture/écriture des données métier : le parking vient TOUJOURS du
+     // compte authentifié, jamais d'un paramètre d'URL (isolation multi-parcs).
+     const account=await store.authenticate(token),lot=account.lot_id
+     const route=url.pathname.slice('/api/data/'.length)
+     if(route==='vehicles'&&req.method==='GET')return json(res,200,{vehicles:await business.listVehicles(lot,{status:url.searchParams.get('status')||undefined,search:url.searchParams.get('q')||undefined})})
+     if(route==='vehicles'&&req.method==='POST'){if(account.role!=='admin'&&account.role!=='responsable'&&account.role!=='caissier')throw new AuthError(403,'Accès refusé.');return json(res,201,await business.createVehicle(lot,await body(req)))}
+     if(route==='sales'&&req.method==='GET')return json(res,200,{sales:await business.listSales(lot,{type:url.searchParams.get('type')||undefined})})
+     if(route==='sales'&&req.method==='POST')return json(res,201,await business.createSale(lot,{...await body(req),userId:account.id}))
+     if(route==='tickets'&&req.method==='GET')return json(res,200,{tickets:await business.listTickets(lot,{status:url.searchParams.get('status')||undefined})})
+     if(route==='tickets'&&req.method==='POST')return json(res,201,await business.openTicket(lot,await body(req)))
+     if(route==='clients'&&req.method==='GET')return json(res,200,{clients:await business.listClients(lot)})
+     if(route==='clients'&&req.method==='POST'){if(account.role!=='admin'&&account.role!=='responsable')throw new AuthError(403,'Accès refusé.');return json(res,201,await business.createClient(lot,await body(req)))}
+     if(route==='stats'&&req.method==='GET')return json(res,200,await business.stats(lot))
+     throw new AuthError(404,'Route inconnue.')
     }
     if(url.pathname==='/api/admin/users'&&req.method==='POST')return json(res,201,await store.createUser(token,await body(req)))
     if(url.pathname==='/api/admin/lots'&&req.method==='POST')return json(res,201,store.createLot(token,await body(req)))
