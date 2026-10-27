@@ -99,14 +99,20 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+  # Le contexte « secrets » n'est PAS autorisé dans jobs.<id>.if : l'utiliser
+  # rendait le fichier entier invalide, et le run échouait sans aucun job.
+  # On conditionne donc sur une variable de dépôt, puis on teste le secret
+  # dans l'étape où le contexte est permis.
   deploy-node:
     name: Déclencher l'hébergeur Node
     needs: build
-    if: github.event_name == 'push' && secrets.DEPLOY_HOOK_URL != ''
+    if: github.event_name == 'push' && vars.DEPLOY_HOOK_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Appeler le webhook de déploiement
+        env:
+          HOOK: ${{ secrets.DEPLOY_HOOK_URL }}
         run: |
+          test -n "$HOOK" || { echo "DEPLOY_HOOK_URL absent : job ignoré"; exit 0; }
           curl --fail --silent --show-error --max-time 30 \
-            -X POST "${{ secrets.DEPLOY_HOOK_URL }}" \
-            -o /dev/null -w 'webhook HTTP %{http_code}\n'
+            -X POST "$HOOK" -o /dev/null -w 'webhook HTTP %{http_code}\n'
