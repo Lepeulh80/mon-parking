@@ -5,8 +5,13 @@ function canonical(path){if(existsSync(path))return realpathSync(path);const par
 export function deploymentConfig(env=process.env,cwd=process.cwd(),{requireBuild=true}={}){
  const [major,minor]=process.versions.node.split('.').map(Number)
  if(major<22||(major===22&&minor<23))throw new Error('Node 22.23+ requis (Node 24 recommandé).')
- if(!env.AUTH_ORIGIN)throw new Error('AUTH_ORIGIN manquant. Copiez .env.example en .env ; définissez votre origine HTTPS en production.')
- let url;try{url=new URL(env.AUTH_ORIGIN)}catch{throw new Error('AUTH_ORIGIN doit être une origine complète, par exemple https://parking.example.com.')}
+ // Plateformes sans shell (Render, Railway) : l'URL publique n'existe qu'après
+ // la création du service. On la déduit de la variable fournie par l'hôte,
+ // AUTH_ORIGIN restant prioritaire pour un domaine personnalisé.
+ const platformOrigin=(env.RENDER_EXTERNAL_URL||'').trim()||(env.RAILWAY_PUBLIC_DOMAIN?`https://${env.RAILWAY_PUBLIC_DOMAIN.trim()}`:'')
+ const declared=(env.AUTH_ORIGIN||platformOrigin||'').trim()
+ if(!declared)throw new Error('AUTH_ORIGIN manquant. Copiez .env.example en .env ; définissez votre origine HTTPS en production.')
+ let url;try{url=new URL(declared)}catch{throw new Error('AUTH_ORIGIN doit être une origine complète, par exemple https://parking.example.com.')}
  if(!['http:','https:'].includes(url.protocol)||url.username||url.password||url.pathname!=='/'||url.search||url.hash)throw new Error('AUTH_ORIGIN doit contenir uniquement protocole + domaine + port éventuel, sans identifiants, chemin ni paramètres.')
  const production=env.NODE_ENV==='production'
  if(url.protocol!=='https:'&&(production||!['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw new Error('HTTPS obligatoire en production ; HTTP est réservé au développement loopback.')

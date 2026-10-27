@@ -1,7 +1,7 @@
-# Blueprint Render — offre gratuite.
-# ATTENTION : sur le plan gratuit, le disque est éphémère et le service
-# s'endort après 15 min sans trafic. La base SQLite est donc recréée à chaque
-# redéploiement/réveil : il faut relancer le provisionnement de l'admin.
+# Blueprint Render — MON PARKING (serveur Node + SQLite, authentification réelle).
+# L'origine publique est déduite de RENDER_EXTERNAL_URL fournie par Render :
+# aucune saisie préalable n'est nécessaire pour que le service démarre.
+# Plan gratuit : disque éphémère et mise en veille après 15 min sans trafic.
 services:
   - type: web
     name: mon-parking
@@ -9,14 +9,25 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: AUTH_ORIGIN
-        sync: false          # à saisir : https://mon-parking.onrender.com
       - key: HOST
         value: 0.0.0.0
       - key: AUTH_TRUST_PROXY
         value: "1"
       - key: AUTH_DB
         value: /app/.server-data/auth.sqlite
+      - key: AUTH_2FA_KEY
+        generateValue: true
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PIN
+        sync: false
+      - key: ADMIN_LOT_NAME
+        value: Auto Prestige
+      - key: ADMIN_NAME
+        value: Kouadio Yao
+      - key: AUTH_MAX_LOGIN_ATTEMPTS
+        value: "20"

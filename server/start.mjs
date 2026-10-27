@@ -1,9 +1,11 @@
 import { AuthStore } from './auth-store.mjs'
 import { createAuthServer } from './http.mjs'
 import { deploymentConfig } from './config.mjs'
+import { bootstrapAdmin } from './bootstrap.mjs'
 try {
  const config=deploymentConfig()
  const store=new AuthStore(config.dbPath)
+ await bootstrapAdmin(store)
  const server=createAuthServer({store,origin:config.origin,distDir:config.distDir,tls:config.tls})
  server.requestTimeout=15000;server.headersTimeout=10000
  // m9 : une erreur de listen fermait la base, puis SIGTERM la refermait et
