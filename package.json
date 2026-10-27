@@ -28,7 +28,8 @@
     "test:crypto": "node test-photo-crypto.mjs",
     "test:node": "node test-v10.mjs && node test-v9.mjs && node test-v8.mjs && node test-v8-sql.mjs && node test-ocr-sync.mjs && node test-learning.mjs && node test-match.mjs && node test-ocr-migration.mjs && node test-db.mjs && node test-media.mjs && node test-toast.mjs && node test-totp.mjs && node test-photo-crypto.mjs && node scripts/test-auth-http.mjs && node scripts/test-deployment.mjs && node test-routes.mjs && node test-storage-media.mjs && node test-media-publish.mjs && node test-i18n-money.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
-    "test:pg": "node scripts/test-pg-stores.mjs"
+    "test:pg": "node scripts/test-pg-stores.mjs",
+    "db:setup": "node scripts/db-setup.mjs"
   },
   "engines": {
     "node": ">=22.23.0"

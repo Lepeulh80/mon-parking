@@ -140,7 +140,10 @@ export class PgBusinessStore {
       // deux caisses simultanées ne peuvent pas obtenir le même numéro.
       await tx.exec(`SELECT pg_advisory_xact_lock(hashtext('mp_invoice:${lotId.replace(/'/g, "''")}'))`)
       const last = await tx.one("SELECT invoice_number FROM sales WHERE lot_id=? AND invoice_number IS NOT NULL ORDER BY invoice_number DESC LIMIT 1", [lotId])
-      const nextNo = (last ? Number(String(last.invoice_number).replace(/\D/g, '')) : 0) + 1
+      // Le numero contient l'annee : « FAC-2026-0001 » -> il faut lire le
+      // DERNIER groupe de chiffres, sinon replace(/\D/g,'') donnait 20260001
+      // et empilait l'annee : FAC-2026-20260002.
+      const nextNo = (last ? Number(String(last.invoice_number).match(/(\d+)$/)?.[1] || 0) : 0) + 1
       const year = new Date(now).getUTCFullYear()
       const invoiceNumber = `FAC-${year}-${String(nextNo).padStart(4, '0')}`
       const total = Number(input.total ?? (vehicle ? num(vehicle.price) : 0))
@@ -181,7 +184,7 @@ export class PgBusinessStore {
       const now = Date.now()
       await tx.exec(`SELECT pg_advisory_xact_lock(hashtext('mp_ticket:${lotId.replace(/'/g, "''")}'))`)
       const last = await tx.one('SELECT ref FROM tickets WHERE lot_id=? ORDER BY ref DESC LIMIT 1', [lotId])
-      const nextNo = (last ? Number(String(last.ref).replace(/\D/g, '')) : 0) + 1
+      const nextNo = (last ? Number(String(last.ref).match(/(\d+)$/)?.[1] || 0) : 0) + 1
       const ref = `TCK-${new Date(now).getUTCFullYear()}-${String(nextNo).padStart(4, '0')}`
       const id = input.id || randomUUID()
       await tx.run('INSERT INTO tickets(id,lot_id,ref,plate,spot_code,status,entry_at,exit_at,amount,data) VALUES(?,?,?,?,?,?,?,?,?,?)',
