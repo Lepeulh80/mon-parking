@@ -21,7 +21,7 @@ export async function bootstrapAdmin(store, env = process.env, log = console) {
   }
   if (pin.length < 4 || pin.length > 64) throw new Error('ADMIN_PIN invalide : 4 à 64 caractères requis.')
 
-  if (hasAccount(store)) return { created: false, reason: 'ALREADY_PROVISIONED' }
+  if (await hasAccount(store)) return { created: false, reason: 'ALREADY_PROVISIONED' }
 
   const lotName = (String(env.ADMIN_LOT_NAME || '').trim() || 'Mon parking').slice(0, 80)
   const adminName = (String(env.ADMIN_NAME || '').trim() || username).slice(0, 120)
@@ -54,8 +54,12 @@ export async function bootstrapAdmin(store, env = process.env, log = console) {
   return { created: true, username, lotId }
 }
 
-function hasAccount(store) {
+async function hasAccount(store) {
+  // Les magasins PostgreSQL sont asynchrones : comparer une promesse à 0
+  // renvoyait toujours faux et l'amorçage échouait au milieu d'une transaction.
+  if (typeof store.countAccounts === 'function') return (await store.countAccounts()) > 0
   if (typeof store.hasAdmin === 'function') return !!store.hasAdmin()
-  if (typeof store.countAccounts === 'function') return store.countAccounts() > 0
-  return store.sql.prepare('SELECT COUNT(*) n FROM accounts').get().n > 0
+  if (typeof store.sql?.prepare === 'function') return store.sql.prepare('SELECT COUNT(*) n FROM accounts').get().n > 0
+  const row = await store.sql.one('SELECT COUNT(*) AS n FROM accounts')
+  return Number(row.n) > 0
 }
