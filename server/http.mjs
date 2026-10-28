@@ -155,6 +155,10 @@ export function createAuthServer({store,origin,distDir=null,tls,business}){
      if(route==='sales'&&req.method==='POST')return json(res,201,await business.createSale(lot,{...await body(req),userId:account.id}))
      if(route==='tickets'&&req.method==='GET')return json(res,200,{tickets:await business.listTickets(lot,{status:url.searchParams.get('status')||undefined})})
      if(route==='tickets'&&req.method==='POST')return json(res,201,await business.openTicket(lot,await body(req)))
+     if(route.startsWith('tickets/')&&req.method==='PATCH'){
+      if(account.role!=='admin'&&account.role!=='responsable'&&account.role!=='caissier')throw new AuthError(403,'Accès refusé.')
+      return json(res,200,await business.closeTicket(lot,decodeURIComponent(route.slice('tickets/'.length)),await body(req)))
+     }
      if(route==='clients'&&req.method==='GET')return json(res,200,{clients:await business.listClients(lot)})
      if(route==='clients'&&req.method==='POST'){if(account.role!=='admin'&&account.role!=='responsable')throw new AuthError(403,'Accès refusé.');return json(res,201,await business.createClient(lot,await body(req)))}
      if(route==='stats'&&req.method==='GET')return json(res,200,await business.stats(lot))

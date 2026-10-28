@@ -1,3 +1,4 @@
+import { pushTicket, closeTicketRemote } from './apiMirror.js'
 import { notifyLocal } from './experience.js'
 import { db, uid, nowIso, authorize } from './db.js'
 import { compact } from './plate.js'
@@ -326,5 +327,5 @@ export async function seedParkingDemo(lot) {
   await db.lots.update(lot.id, { ticketNext: n })
 }
 
-export async function createTicket(payload){const row=await createTicketCore(payload);try{await notifyLocal({lotId:row.lotId,userId:payload.user.id,kind:'validation',title:ticketCloudEnabled(row.lotId)?'Entrée enregistrée, confirmation cloud en attente':'Entrée de stationnement validée localement',body:`${row.ref} · ${row.spotCode}`,dedupe:`entry:${row.id}`})}catch(e){console.warn('notification',e.message)}return row}
-export async function closeTicket(ticketId,options){const row=await closeTicketCore(ticketId,options);try{await notifyLocal({lotId:row.lotId,userId:options.user.id,kind:'validation',title:ticketCloudEnabled(row.lotId)?'Sortie enregistrée, confirmation cloud en attente':'Sortie de stationnement validée localement',body:row.ref,dedupe:`exit:${row.id}`})}catch(e){console.warn('notification',e.message)}return row}
+export async function createTicket(payload){const row=await createTicketCore(payload);try{await notifyLocal({lotId:row.lotId,userId:payload.user.id,kind:'validation',title:ticketCloudEnabled(row.lotId)?'Entrée enregistrée, confirmation cloud en attente':'Entrée de stationnement validée localement',body:`${row.ref} · ${row.spotCode}`,dedupe:`entry:${row.id}`})}catch(e){console.warn('notification',e.message)}try{await pushTicket({id:row.id,plate:row.plate,spot:row.spotCode,currency:payload?.lot?.currency})}catch(e){console.warn('Ticket non répliqué sur le serveur :',e.message)}return row}
+export async function closeTicket(ticketId,options){const row=await closeTicketCore(ticketId,options);try{await notifyLocal({lotId:row.lotId,userId:options.user.id,kind:'validation',title:ticketCloudEnabled(row.lotId)?'Sortie enregistrée, confirmation cloud en attente':'Sortie de stationnement validée localement',body:row.ref,dedupe:`exit:${row.id}`})}catch(e){console.warn('notification',e.message)}try{await closeTicketRemote(row.id,{amount:row.amount,method:options?.paymentMethod})}catch(e){console.warn('Sortie non répliquée sur le serveur :',e.message)}return row}
