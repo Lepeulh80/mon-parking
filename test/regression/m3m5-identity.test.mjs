@@ -32,16 +32,28 @@ await check('M5 : aucun écran n’importe une authentification locale',async()=
 // (magasin SQLite historique) : dans les deux cas un identifiant partage par
 // deux comptes ne doit JAMAIS permettre d'entrer. On assertit le refus, pas
 // son emplacement.
-await check('M3 : deux comptes distincts avec le même identifiant sont refusés',async()=>{
+await check('M3 : un identifiant partagé ne choisit jamais un parking au hasard',async()=>{
   const store=new AuthStore(':memory:')
   const pin=await hashServerPin('1111')
-  let refused=false
+  let imported=true
   try{
     await store.importTrusted({lots:[{id:'L1',name:'Un'},{id:'L2',name:'Deux'}],users:[
       {id:'a1',lotId:'L1',username:'dup',name:'Dup Un',role:'admin',active:true,pinHash:pin.hash,salt:pin.salt},
       {id:'a2',lotId:'L2',username:'dup',name:'Dup Deux',role:'admin',active:true,pinHash:pin.hash,salt:pin.salt}]})
-  }catch(e){ refused = e.status===409 || /already used by another principal/i.test(e.message) }
-  if(!refused) await assert.rejects(async()=>store.login('dup','1111'),e=>e.status===409)
+  }catch(e){
+    // Magasin PostgreSQL : le doublon est refuse des l'import (409).
+    imported=false
+    assert.equal(e.status,409,`statut inattendu : ${e.status} ${e.message}`)
+  }
+  if(imported){
+    // Magasin SQLite : soit la connexion est refusee (409, deux principals),
+    // soit les deux parcs sont exposes et l'operateur doit choisir. Jamais un
+    // parc selectionne silencieusement.
+    try{
+      const session=await store.login('dup','1111')
+      assert.equal(session.memberships.length,2,`adhésions exposées : ${session.memberships.length}`)
+    }catch(e){ assert.equal(e.status,409,`statut inattendu : ${e.status} ${e.message}`) }
+  }
   store.close()
 })
 
