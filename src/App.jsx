@@ -171,7 +171,7 @@ function Shell({ session, onLogout, onSwitchLot }) {
               <div className="nav-group-label">{t(g.group)}</div>
               {g.items.map((i) => (
                 <a key={i.to} className={classNames('nav-item', route.path.startsWith(i.to) && 'on')} href={`#${i.to}`}>
-                  <i.icon />
+                  <span className="nav-ico"><i.icon /></span>
                   <span>{t(i.label)}</span>
                 </a>
               ))}
@@ -259,7 +259,7 @@ function Shell({ session, onLogout, onSwitchLot }) {
             { to: isAdmin ? '/admin' : '/experience', label: isAdmin ? 'nav.admin' : 'nav.settings', icon: Settings },
           ].map((i) => (
             <a key={i.to} href={`#${i.to}`} className={route.path === i.to ? 'on' : ''}>
-              <i.icon />
+              <span className="nav-ico"><i.icon /></span>
               {t(i.label)}
             </a>
           ))}
