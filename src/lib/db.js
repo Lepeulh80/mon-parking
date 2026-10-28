@@ -354,12 +354,16 @@ export async function seedDemo() {
   await db.lots.add(lot)
 
   const staff = []
-  for (const [username, name, role, pin] of [
-    ['admin', 'Kouadio Yao', 'admin', '1234'],
-    ['vendeur', 'Aminata Diallo', 'employe', '1111'],
-    ['vendeur2', 'Serge Konan', 'employe', '2222'],
+  // v23 : plus AUCUN identifiant par défaut. Ces profils ne servent qu'à
+  // signer les ventes du jeu de démonstration local ; leur PIN est tiré au
+  // hasard et jamais affiché, donc aucun « admin / 1234 » ne subsiste.
+  for (const [username, name, role] of [
+    ['admin', 'Kouadio Yao', 'admin'],
+    ['vendeur', 'Aminata Diallo', 'employe'],
+    ['vendeur2', 'Serge Konan', 'employe'],
   ]) {
-    const { hash, salt } = await hashPin(pin)
+    const randomPin = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join('')
+    const { hash, salt } = await hashPin(randomPin)
     const u = {
       id: `demo-user-${username}`, lotId, username, name, role, pinHash: hash, salt, active: true,
       phone: '', createdAt: nowIso(),

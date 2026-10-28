@@ -495,3 +495,57 @@ table.tbl tbody tr:last-child td { border-bottom: 0; }
 [dir="rtl"] .mobile-bottom { direction: rtl; }
 [dir="rtl"] .spinner,
 [dir="rtl"] .spin-range { direction: ltr; }
+
+/* ---------- v23 : identité animée de l'écran d'accueil ---------- */
+/* Deux halos lents + un reflet qui balaie le panneau : le mouvement porte
+   l'identité de marque sans coûter une image de plus à télécharger. */
+.auth-visual { position: relative; overflow: hidden; }
+.auth-visual::before {
+  content: ''; position: absolute; inset: -18%; pointer-events: none; z-index: 1;
+  background:
+    radial-gradient(42% 42% at 24% 26%, rgba(198,242,78,0.20), transparent 62%),
+    radial-gradient(38% 38% at 76% 72%, rgba(78,158,242,0.22), transparent 66%),
+    radial-gradient(30% 30% at 62% 18%, rgba(198,242,78,0.10), transparent 70%);
+  animation: mp-aurora 19s ease-in-out infinite alternate;
+}
+.auth-visual::after {
+  content: ''; position: absolute; inset: -10%; pointer-events: none; z-index: 1;
+  background: linear-gradient(112deg, transparent 42%, rgba(255,255,255,0.07) 50%, transparent 58%);
+  transform: translateX(-70%); mix-blend-mode: screen;
+  animation: mp-sheen 9s cubic-bezier(.5,0,.5,1) infinite;
+}
+@keyframes mp-aurora {
+  0%   { transform: translate3d(-2%, -1%, 0) scale(1); opacity: .85; }
+  50%  { transform: translate3d(2%, 2%, 0) scale(1.06); opacity: 1; }
+  100% { transform: translate3d(-1%, 3%, 0) scale(1.02); opacity: .9; }
+}
+@keyframes mp-sheen {
+  0%, 100% { transform: translateX(-70%); opacity: 0; }
+  35%      { opacity: .9; }
+  70%      { transform: translateX(70%); opacity: 0; }
+}
+/* Le logotype de l'accueil respire doucement, comme une enseigne. */
+.auth-brand .brand-logo {
+  box-shadow: 0 0 0 1px rgba(198,242,78,0.35), 0 12px 34px rgba(198,242,78,0.22);
+  animation: mp-breathe 6s ease-in-out infinite;
+}
+@keyframes mp-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-2px) scale(1.035); }
+}
+/* Une barre lumineuse souligne le titre : elle rappelle le marquage au sol. */
+.auth-copy h1 em { position: relative; font-style: italic; }
+.auth-copy h1 em::after {
+  content: ''; position: absolute; left: 2px; right: 2px; bottom: -6px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--acc), transparent);
+  transform-origin: left; animation: mp-scan 4.5s ease-in-out infinite;
+}
+@keyframes mp-scan { 0%, 100% { transform: scaleX(.35); opacity: .55; } 50% { transform: scaleX(1); opacity: 1; } }
+[data-motion="reduced"] .auth-visual::before,
+[data-motion="reduced"] .auth-visual::after,
+[data-motion="reduced"] .auth-brand .brand-logo,
+[data-motion="reduced"] .auth-copy h1 em::after { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .auth-visual::before, .auth-visual::after,
+  .auth-brand .brand-logo, .auth-copy h1 em::after { animation: none; }
+}

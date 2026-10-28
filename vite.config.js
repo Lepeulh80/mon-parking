@@ -23,23 +23,26 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'],
       manifest: {
         name: 'MON PARKING — Gestion de parkings automobiles',
         short_name: 'MON PARKING',
         description:
           'Suite de gestion multi-parcs : stock, ventes, locations, factures, comptabilité et statistiques.',
         lang: 'fr',
-        theme_color: '#0a0e14',
-        background_color: '#0a0e14',
+        theme_color: '#0a1119',
+        background_color: '#06090e',
         display: 'standalone',
         orientation: 'portrait-primary',
         start_url: './',
         scope: './',
         categories: ['business', 'productivity', 'finance'],
+        // purpose séparés : Chrome refuse un jeu d'icônes où « any » et
+        // « maskable » partagent le même fichier aux mauvaises marges.
         icons: [
-          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png', purpose: 'any' },
           { src: 'icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
         shortcuts: [

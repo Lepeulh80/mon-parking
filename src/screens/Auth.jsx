@@ -162,12 +162,6 @@ export default function Auth({ onLogin }) {
                 </button>
               </form>
               </>)}
-              <div className="demo-box">
-                <b>Comptes de démonstration</b><br />
-                Administrateur : <code>admin</code> / PIN <code>1234</code><br />
-                Employé : <code>vendeur</code> / PIN <code>1111</code><br />
-                Second vendeur : <code>vendeur2</code> / PIN <code>2222</code>
-              </div>
             </>
           ) : (
             <>
