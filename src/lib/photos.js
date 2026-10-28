@@ -15,10 +15,10 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, uid, nowIso } from './db.js'
 import { encryptText, isEncryptedValue, isUnlocked, openMedia, touch } from './photoCrypto.js'
 import {
-import { presignVehiclePhoto, completeVehiclePhoto, deleteVehiclePhotoRemote } from './apiData.js'
   FRAME, PHOTO, MAX_IMAGE_EDGE, THUMB_EDGE, QUALITY,
   isAcceptedMime, isTooLarge, formatBytes, nextSort, orderFilesByName,
 } from './photoMath.js'
+import { presignVehiclePhoto, completeVehiclePhoto, deleteVehiclePhotoRemote } from './apiData.js'
 
 export const MEDIA_TABLE = 'vehiclePhotos'
 export { FRAME, PHOTO }
@@ -128,6 +128,9 @@ export async function addVehiclePhotos(lotId, vehicleId, files, { kind = PHOTO }
 }
 
 export async function removeVehiclePhoto(vehicleId, photoId) {
+  // La ligne locale part en premier ; l'objet R2 est supprimé ensuite pour
+  // qu'une panne réseau ne laisse jamais une photo orpheline côté serveur.
+  const mirrored = await db.vehiclePhotos.get(photoId)
   await db.transaction('rw', db.vehiclePhotos, db.vehicles, async () => {
     const row = await db.vehiclePhotos.get(photoId)
     await db.vehiclePhotos.delete(photoId)
@@ -143,6 +146,9 @@ export async function removeVehiclePhoto(vehicleId, photoId) {
       mediaUpdatedAt: nowIso(),
     })
   })
+  if (mirrored?.remoteId) {
+    try { await deleteVehiclePhotoRemote(mirrored.remoteId) } catch (error) { console.warn('Objet R2 non supprimé :', error.message) }
+  }
 }
 
 export async function setCoverPhoto(vehicleId, photoId) {

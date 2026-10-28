@@ -21,7 +21,8 @@ describe('clé d’objet', () => {
     const key = mediaKey('../../etc', 'V1/../..', 'image/jpeg', 'a/b')
     expect(key.startsWith('lots/etc/vehicles/V1')).toBe(true)
     expect(key.includes('..')).toBe(false)
-    expect(key.split('/').length).toBe(4)
+    // lots / <parking> / vehicles / <vehicule> / <objet> : cinq segments
+    expect(key.split('/').length).toBe(5)
   })
   it('ajoute une empreinte stable et non devinable quand fournie', () => {
     const a = mediaKey('L', 'V', 'image/jpeg', 'id', 'photo-1.jpg')
