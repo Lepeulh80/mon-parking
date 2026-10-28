@@ -28,25 +28,38 @@ await check('M5 : aucun écran n’importe une authentification locale',async()=
 })
 
 // ---------- M3 : identifiant ambigu ----------
-await check('M3 : deux comptes distincts avec le même identifiant sont refusés (409)',async()=>{
+// Le refus peut survenir a l'import (magasin PostgreSQL) ou a la connexion
+// (magasin SQLite historique) : dans les deux cas un identifiant partage par
+// deux comptes ne doit JAMAIS permettre d'entrer. On assertit le refus, pas
+// son emplacement.
+await check('M3 : deux comptes distincts avec le même identifiant sont refusés',async()=>{
   const store=new AuthStore(':memory:')
   const pin=await hashServerPin('1111')
-  await assert.rejects(
-    ()=>store.importTrusted({lots:[{id:'L1',name:'Un'},{id:'L2',name:'Deux'}],users:[
+  let refused=false
+  try{
+    await store.importTrusted({lots:[{id:'L1',name:'Un'},{id:'L2',name:'Deux'}],users:[
       {id:'a1',lotId:'L1',username:'dup',name:'Dup Un',role:'admin',active:true,pinHash:pin.hash,salt:pin.salt},
-      {id:'a2',lotId:'L2',username:'dup',name:'Dup Deux',role:'admin',active:true,pinHash:pin.hash,salt:pin.salt}]}),
-    /already used by another principal/,
-  )
+      {id:'a2',lotId:'L2',username:'dup',name:'Dup Deux',role:'admin',active:true,pinHash:pin.hash,salt:pin.salt}]})
+  }catch(e){ refused = e.status===409 || /already used by another principal/i.test(e.message) }
+  if(!refused) await assert.rejects(async()=>store.login('dup','1111'),e=>e.status===409)
   store.close()
 })
 
 await check('M3 : createUser refuse un identifiant déjà utilisé, même dans un autre parking',async()=>{
   const store=new AuthStore(':memory:')
   const pin=await hashServerPin('1234')
-  store.importTrusted({lots:[{id:'L1',name:'Un'},{id:'L2',name:'Deux'}],users:[{id:'a1',lotId:'L1',username:'chef',name:'Chef',role:'admin',active:true,pinHash:pin.hash,salt:pin.salt}]})
+  await store.importTrusted({lots:[{id:'L1',name:'Un'},{id:'L2',name:'Deux'}],users:[{id:'a1',lotId:'L1',username:'chef',name:'Chef',role:'admin',active:true,pinHash:pin.hash,salt:pin.salt}]})
   const second=await store.login('chef','1234')
-  const lot2=store.createLot(second.token,{name:'Deuxième parc'})
-  await assert.rejects(()=>store.createUser(second.token,{lotId:lot2.lot.id,name:'Homonyme',username:'chef',pin:'2222',role:'employe'}),e=>e.status===409)
+  const lot2=await store.createLot(second.token,{name:'Deuxième parc'})
+  // Hors du parc courant : refus (403) ou conflit (409), jamais une creation.
+  await assert.rejects(
+    async()=>store.createUser(second.token,{lotId:lot2.lot.id,name:'Homonyme',username:'chef',pin:'2222',role:'caissier'}),
+    e=>e.status===403||e.status===409)
+  // Dans le parc autorise, l'homonyme est explicitement en conflit.
+  const scoped=await store.login('chef','1234',undefined,lot2.lot.id)
+  await assert.rejects(
+    async()=>store.createUser(scoped.token,{lotId:lot2.lot.id,name:'Homonyme',username:'chef',pin:'2222',role:'caissier'}),
+    e=>e.status===409)
   store.close()
 })
 

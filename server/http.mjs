@@ -82,7 +82,7 @@ export function createAuthServer({store,origin,distDir=null,tls,business}){
    try{
     if(req.headers.host!==expected.host)throw new AuthError(403,'Hôte refusé.')
     if(req.headers['sec-fetch-site']==='cross-site'||(req.headers.origin&&req.headers.origin!==expected.origin))throw new AuthError(403,'Origine refusée.')
-    if(!['GET','POST','PATCH'].includes(req.method))throw new AuthError(405,'Méthode refusée.')
+    if(!['GET','POST','PATCH','DELETE'].includes(req.method))throw new AuthError(405,'Méthode refusée.')
     if(req.method!=='GET'&&(req.headers.origin!==expected.origin||!String(req.headers['content-type']||'').startsWith('application/json')))throw new AuthError(403,'Requête même origine JSON requise.')
     if(url.pathname==='/api/auth/login'&&req.method==='POST'){
      const key=clientKey(req),wait=await waitFor(key)
