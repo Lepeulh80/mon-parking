@@ -1,3 +1,4 @@
+import { AuthError } from './auth-store.mjs'
 // MON PARKING — magasin d'authentification sur PostgreSQL.
 //
 // Portage de server/auth-store.mjs (SQLite synchrone) vers l'adaptateur
@@ -28,14 +29,7 @@ const digest = (s) => createHash('sha256').update(s).digest('hex')
 const ROLES = new Set(['admin', 'responsable', 'caissier', 'agent', 'employe'])
 const SECRET_PREFIX = 'v1:'
 
-export class AuthError extends Error { constructor(status, message) { super(message); this.status = status } }
-
-function parseActive(value) {
-  if (value === true || value === 1 || value === '1' || value === 'true') return true
-  if (value === false || value === 0 || value === '0' || value === 'false') return false
-  throw new AuthError(400, 'Valeur « active » invalide : booléen attendu.')
-}
-
+export 
 const safeEqual = (a, b) => {
   const x = Buffer.from(String(a)), y = Buffer.from(String(b))
   return x.length === y.length && timingSafeEqual(x, y)

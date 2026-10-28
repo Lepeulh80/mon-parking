@@ -170,7 +170,10 @@ export function createAuthServer({store,origin,distDir=null,tls,business}){
     }
     throw new AuthError(405,'Route ou méthode refusée.')
    }catch(e){
-    const status=e instanceof AuthError?e.status:500
+    const status=e instanceof AuthError?e.status:(Number.isInteger(e&&e.status)&&e.status>=400&&e.status<600?e.status:500)
+    // Une erreur 500 était jusqu'ici totalement silencieuse : impossible de
+    // savoir si elle vient de PostgreSQL, d'un pool fermé ou d'un bug.
+    if(status===500)console.error('[api]',req.method,req.url,e&&e.stack?e.stack:e)
     // A delayed rejection must not erase a newer cookie set by another tab.
     // Explicit logout and PIN-change responses clear their own cookie instead.
     return json(res,status,{error:status===500?'Erreur serveur.':e.message})
