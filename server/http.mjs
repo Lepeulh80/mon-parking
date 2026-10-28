@@ -73,7 +73,7 @@ export function createAuthServer({store,origin,distDir=null,tls,business}){
    if(url.pathname==='/healthz')return json(res,200,{status:'ok'})
    try{
     if(!distDir||!(await stat(resolve(distDir,'index.html'))).isFile())return json(res,503,{ready:false,reason:'BUILD_REQUIRED'})
-    const admin=store.sql.prepare("SELECT COUNT(*) n FROM accounts WHERE role='admin' AND active=1").get().n
+    const admin=typeof store.countActiveAdmins==="function"?await store.countActiveAdmins():store.sql.prepare("SELECT COUNT(*) n FROM accounts WHERE role='admin' AND active=1").get().n
     return admin?json(res,200,{ready:true}):json(res,503,{ready:false,reason:'ADMIN_REQUIRED'})
    }catch{return json(res,503,{ready:false,reason:'AUTH_DB_OR_BUILD_UNAVAILABLE'})}
   }
@@ -85,45 +85,45 @@ export function createAuthServer({store,origin,distDir=null,tls,business}){
     if(!['GET','POST','PATCH'].includes(req.method))throw new AuthError(405,'Méthode refusée.')
     if(req.method!=='GET'&&(req.headers.origin!==expected.origin||!String(req.headers['content-type']||'').startsWith('application/json')))throw new AuthError(403,'Requête même origine JSON requise.')
     if(url.pathname==='/api/auth/login'&&req.method==='POST'){
-     const key=clientKey(req),wait=waitFor(key)
+     const key=clientKey(req),wait=await waitFor(key)
      if(wait){res.setHeader('Retry-After',String(wait));return json(res,429,{error:`Trop de tentatives depuis ce poste. Réessayez dans ${Math.ceil(wait/60)} minute(s).`})}
      const input=await body(req)
      let result
      try{result=await store.login(input.username,input.pin,token,input.lot)}
-     catch(error){recordFailure(key);if(error.retryAfter)res.setHeader('Retry-After',String(error.retryAfter));throw error}
-     if(typeof store.clearLoginFailures==='function')store.clearLoginFailures(key);else attempts.delete(key)
+     catch(error){await recordFailure(key);if(error.retryAfter)res.setHeader('Retry-After',String(error.retryAfter));throw error}
+     if(typeof store.clearLoginFailures==='function')await store.clearLoginFailures(key);else attempts.delete(key)
      if(result.mfaRequired)return json(res,200,{mfaRequired:true,challenge:result.challenge,expires:result.expires})
      const {token:fresh,expires,...identity}=result
      setCookie(res,fresh,expires);return json(res,200,identity)
     }
     if(url.pathname==='/api/auth/mfa'&&req.method==='POST'){
-     const key=clientKey(req),wait=waitFor(key)
+     const key=clientKey(req),wait=await waitFor(key)
      if(wait){res.setHeader('Retry-After',String(wait));return json(res,429,{error:`Trop de tentatives depuis ce poste. Réessayez dans ${Math.ceil(wait/60)} minute(s).`})}
      const input=await body(req)
      let result
      try{result=await store.completeMfa(input.challenge,input.code)}
-     catch(error){recordFailure(key);if(error.retryAfter)res.setHeader('Retry-After',String(error.retryAfter));throw error}
-     if(typeof store.clearLoginFailures==='function')store.clearLoginFailures(key);else attempts.delete(key)
+     catch(error){await recordFailure(key);if(error.retryAfter)res.setHeader('Retry-After',String(error.retryAfter));throw error}
+     if(typeof store.clearLoginFailures==='function')await store.clearLoginFailures(key);else attempts.delete(key)
      const {token:fresh,expires,...identity}=result
      setCookie(res,fresh,expires);return json(res,200,identity)
     }
-    if(url.pathname==='/api/auth/mfa/enroll'&&req.method==='POST')return json(res,200,store.enrollTotp(token))
+    if(url.pathname==='/api/auth/mfa/enroll'&&req.method==='POST')return json(res,200,await store.enrollTotp(token))
     if(url.pathname==='/api/auth/mfa/activate'&&req.method==='POST'){
-     const input=await body(req);return json(res,200,store.activateTotp(token,input.code))
+     const input=await body(req);return json(res,200,await store.activateTotp(token,input.code))
     }
     if(url.pathname==='/api/auth/mfa/disable'&&req.method==='POST'){
      const input=await body(req);await store.disableTotp(token,input.pin);setCookie(res,'',0);return json(res,200,{ok:true})
     }
-    if(url.pathname==='/api/auth/logout'&&req.method==='POST'){store.logout(token);setCookie(res,'',0);return json(res,200,{ok:true})}
+    if(url.pathname==='/api/auth/logout'&&req.method==='POST'){await store.logout(token);setCookie(res,'',0);return json(res,200,{ok:true})}
     if(url.pathname==='/api/auth/status'&&req.method==='GET'){
-     try{return json(res,200,{authenticated:true,...store.identity(store.authenticate(token))})}
+     try{return json(res,200,{authenticated:true,...await store.identity(await store.authenticate(token))})}
      catch(e){if(e.status!==401)throw e;return json(res,200,{authenticated:false})}
     }
     if(url.pathname==='/api/auth/session'&&req.method==='GET'){
-     const account=store.authenticate(token);return json(res,200,store.identity(account))
+     const account=await store.authenticate(token);return json(res,200,await store.identity(account))
     }
     if(url.pathname==='/api/auth/authorize'&&req.method==='POST'){
-     const input=await body(req),account=store.authenticate(token),user=store.profile(account)
+     const input=await body(req),account=await store.authenticate(token),user=store.profile(account)
      if(user.lotId!==input.lotId||!hasPermission(user,input.permission))throw new AuthError(403,'Accès refusé.')
      return json(res,200,user)
     }
@@ -151,7 +151,7 @@ export function createAuthServer({store,origin,distDir=null,tls,business}){
      throw new AuthError(404,'Route inconnue.')
     }
     if(url.pathname==='/api/admin/users'&&req.method==='POST')return json(res,201,await store.createUser(token,await body(req)))
-    if(url.pathname==='/api/admin/lots'&&req.method==='POST')return json(res,201,store.createLot(token,await body(req)))
+    if(url.pathname==='/api/admin/lots'&&req.method==='POST')return json(res,201,await store.createLot(token,await body(req)))
     const match=/^\/api\/admin\/users\/([^/]+)$/.exec(url.pathname)
     if(match&&req.method==='PATCH'){
      const updated=await store.updateUser(token,decodeURIComponent(match[1]),await body(req))
