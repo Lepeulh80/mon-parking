@@ -165,12 +165,12 @@ export function createAuthServer({store,origin,distDir=null,tls,business,media=n
      if(route==='stats'&&req.method==='GET')return json(res,200,await business.stats(lot))
      throw new AuthError(404,'Route inconnue.')
     }
-    if(media&&url.pathname.startsWith('/api/media/')){
+    if(url.pathname.startsWith('/api/media/')){
      const account=await store.authenticate(token),lot=account.lot_id
      // Diagnostic sans secret : l'interface sait si le téléversement cloud est actif.
      if(url.pathname==='/api/media/status'&&req.method==='GET')
-      return json(res,200,{enabled:!!media.config,bucket:media.config?media.config.bucket:null,publicUrl:media.config?(media.config.publicUrl||null):null})
-     if(!media.config)throw new AuthError(503,'Stockage R2 non configuré : R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY et R2_BUCKET sont absents.')
+      return json(res,200,{enabled:!!media&&!!media.config,bucket:media&&media.config?media.config.bucket:null,publicUrl:media&&media.config?(media.config.publicUrl||null):null})
+     if(!media||!media.config)throw new AuthError(503,'Stockage R2 non configuré : R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY et R2_BUCKET sont absents.')
      if(url.pathname==='/api/media/presign'&&req.method==='POST'){
       if(account.role!=='admin'&&account.role!=='responsable'&&account.role!=='caissier')throw new AuthError(403,'Accès refusé.')
       const input=await body(req)
