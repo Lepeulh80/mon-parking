@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Users, Plus, Search, Pencil, Trash2, Phone, Mail, MapPin, Building2, User } from 'lucide-react'
 import { db } from '../lib/db'
+import { useRemoteRows } from '../lib/apiData'
 import { saveClient, deleteClient } from '../lib/admin'
 import { useApp } from '../App'
 import { Card, Badge, Modal, Confirm, Empty, Field, Input, Select, useToast, IconBtn } from '../components/UI'
@@ -11,8 +12,10 @@ export default function Clients() {
   const { lot, isAdmin } = useApp()
   const cur = lot.currency
   const toast = useToast()
-  const clients = useLiveQuery(() => db.clients.where('lotId').equals(lot.id).toArray(), [lot.id], [])
-  const sales = useLiveQuery(() => db.sales.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const clientsLocal = useLiveQuery(() => db.clients.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const clients = useRemoteRows('clients', lot.id, clientsLocal)
+  const salesLocal = useLiveQuery(() => db.sales.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const sales = useRemoteRows('sales', lot.id, salesLocal)
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(null)

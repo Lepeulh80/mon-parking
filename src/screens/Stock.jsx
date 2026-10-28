@@ -5,6 +5,7 @@ import {
   ShoppingCart, Package, History, Check,
 } from 'lucide-react'
 import { db } from '../lib/db'
+import { useRemoteRows } from '../lib/apiData'
 import { saveVehicle, deleteVehicle } from '../lib/admin'
 import { useApp } from '../App'
 import { PlateInput } from '../components/PlateScanner'
@@ -240,7 +241,8 @@ export function VehicleDetail({ vehicle, onClose, isAdmin, onEdit }) {
 export default function Stock() {
   const { lot, isAdmin } = useApp()
   const cur = lot.currency
-  const vehicles = useLiveQuery(() => db.vehicles.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const vehiclesLocal = useLiveQuery(() => db.vehicles.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const vehicles = useRemoteRows('vehicles', lot.id, vehiclesLocal)
   const [q, setQ] = useState('')
   const [filter, setFilter] = useState('stock')
   const [editing, setEditing] = useState(null)

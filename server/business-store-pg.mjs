@@ -205,6 +205,20 @@ export class PgBusinessStore {
     })
   }
 
+  // Annulation d'une vente : le véhicule repasse en stock et la vente disparaît.
+  // Le tout dans une transaction : sans cela un échec laisserait un véhicule
+  // marqué « vendu » sans vente, donc invisible dans le stock.
+  async deleteSale(lotId, id) {
+    return this.sql.transaction(async (tx) => {
+      const sale = await tx.one('SELECT * FROM sales WHERE id=? AND lot_id=?', [id, lotId])
+      if (!sale) { const e = new Error('Vente introuvable.'); e.status = 404; throw e }
+      await tx.run('DELETE FROM payments WHERE sale_id=? AND lot_id=?', [id, lotId])
+      await tx.run('DELETE FROM sales WHERE id=? AND lot_id=?', [id, lotId])
+      if (sale.vehicle_id) await tx.run("UPDATE vehicles SET status='disponible',updated_at=? WHERE id=? AND lot_id=?", [Date.now(), sale.vehicle_id, lotId])
+      return { ok: true }
+    })
+  }
+
   // ------------------------------ statistiques -----------------------------
   async stats(lotId) {
     const sales = await this.sql.one(`SELECT COUNT(*) n, COALESCE(SUM(total),0) total, COALESCE(SUM(paid),0) paid FROM sales WHERE lot_id=?`, [lotId])

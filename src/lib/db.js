@@ -2,6 +2,7 @@ import Dexie from 'dexie'
 import { hasPermission } from './permissions.js'
 import { money, bookReceipt } from './cashLedger.js'
 import { authRequest } from './authSession.js'
+import { pushSale } from './apiData.js'
 
 export const db = new Dexie('monparking')
 
@@ -137,7 +138,7 @@ export function docNumber(lot, kind, n) {
 }
 
 /* ---------------- mutations ---------------- */
-export async function createSale(payload) {
+async function createSaleLocal(payload) {
   const actor = await authorize({ id: payload.userId }, payload.lotId, 'sales.write')
   if(!['vente','location'].includes(payload.type)) throw new Error('Type de document invalide.')
   payload={...payload,total:money(payload.total),paid:money(payload.paid),price:payload.price===undefined?money(payload.total):money(payload.price),discount:money(payload.discount??0),subtotal:payload.subtotal===undefined?money(payload.total):money(payload.subtotal),vatAmount:money(payload.vatAmount??0),deposit:money(payload.deposit??0)}
@@ -499,4 +500,15 @@ export async function seedDemo() {
   })
 
   await db.meta.put({ key: 'seeded', value: true })
+}
+
+// Enveloppe : la vente est d'abord écrite localement (l'interface reste
+// utilisable hors ligne), puis répliquée sur le serveur PostgreSQL. Un échec
+// réseau n'annule pas la vente locale mais il est signalé.
+export async function createSale(payload) {
+  const sale = await createSaleLocal(payload)
+  try {
+    await pushSale({ type: sale.type, vehicleId: sale.vehicleId, clientId: sale.clientId, total: sale.total, paid: sale.paid, method: sale.method || 'espece', clientName: sale.clientName })
+  } catch (error) { console.warn('Vente non répliquée sur le serveur :', error.message) }
+  return sale
 }

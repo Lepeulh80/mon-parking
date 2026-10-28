@@ -4,6 +4,7 @@ import {
   Car, User, CreditCard, Check, ArrowLeft, ArrowRight, Search, Plus, FileText,
   AlertTriangle,
 } from 'lucide-react'
+import { useRemoteRows } from '../lib/apiData'
 import { db, createSale, nowIso } from '../lib/db'
 import { saveClient } from '../lib/admin'
 import { useApp } from '../App'
@@ -26,8 +27,10 @@ export default function NewSale() {
   const { lot, user } = useApp()
   const cur = lot.currency
   const toast = useToast()
-  const vehicles = useLiveQuery(() => db.vehicles.where('lotId').equals(lot.id).toArray(), [lot.id], [])
-  const clients = useLiveQuery(() => db.clients.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const vehiclesLocal = useLiveQuery(() => db.vehicles.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const vehicles = useRemoteRows('vehicles', lot.id, vehiclesLocal)
+  const clientsLocal = useLiveQuery(() => db.clients.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const clients = useRemoteRows('clients', lot.id, clientsLocal)
   const stock = useMemo(() => vehicles.filter((v) => v.status === 'stock'), [vehicles])
 
   const [step, setStep] = useState(0)

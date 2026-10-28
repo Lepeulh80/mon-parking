@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import {
   ShoppingCart, Search, FileText, Receipt, Trash2, Plus, Eye, Download, CreditCard,
 } from 'lucide-react'
+import { useRemoteRows } from '../lib/apiData'
 import { db, addPayment, deleteSale } from '../lib/db'
 import { useApp } from '../App'
 import { Card, CardHead, Badge, StatusBadge, Modal, Confirm, Empty, Seg, Field, Input, useToast, IconBtn } from '../components/UI'
@@ -119,7 +120,8 @@ export default function Sales() {
   const { lot, isAdmin, user } = useApp()
   const cur = lot.currency
   const toast = useToast()
-  const sales = useLiveQuery(() => db.sales.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const salesLocal = useLiveQuery(() => db.sales.where('lotId').equals(lot.id).toArray(), [lot.id], [])
+  const sales = useRemoteRows('sales', lot.id, salesLocal)
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('tous')
   const [type, setType] = useState('tous')

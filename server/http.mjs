@@ -141,6 +141,16 @@ export function createAuthServer({store,origin,distDir=null,tls,business}){
      const route=url.pathname.slice('/api/data/'.length)
      if(route==='vehicles'&&req.method==='GET')return json(res,200,{vehicles:await business.listVehicles(lot,{status:url.searchParams.get('status')||undefined,search:url.searchParams.get('q')||undefined})})
      if(route==='vehicles'&&req.method==='POST'){if(account.role!=='admin'&&account.role!=='responsable'&&account.role!=='caissier')throw new AuthError(403,'Accès refusé.');return json(res,201,await business.createVehicle(lot,await body(req)))}
+     if(route.startsWith('vehicles/')&&(req.method==='PATCH'||req.method==='DELETE')){
+      if(account.role!=='admin'&&account.role!=='responsable'&&account.role!=='caissier')throw new AuthError(403,'Accès refusé.')
+      const vid=decodeURIComponent(route.slice('vehicles/'.length))
+      if(req.method==='DELETE')return json(res,200,await business.deleteVehicle(lot,vid))
+      return json(res,200,await business.updateVehicle(lot,vid,await body(req)))
+     }
+     if(route.startsWith('sales/')&&req.method==='DELETE'){
+      if(account.role!=='admin'&&account.role!=='responsable')throw new AuthError(403,'Accès refusé.')
+      return json(res,200,await business.deleteSale(lot,decodeURIComponent(route.slice('sales/'.length))))
+     }
      if(route==='sales'&&req.method==='GET')return json(res,200,{sales:await business.listSales(lot,{type:url.searchParams.get('type')||undefined})})
      if(route==='sales'&&req.method==='POST')return json(res,201,await business.createSale(lot,{...await body(req),userId:account.id}))
      if(route==='tickets'&&req.method==='GET')return json(res,200,{tickets:await business.listTickets(lot,{status:url.searchParams.get('status')||undefined})})

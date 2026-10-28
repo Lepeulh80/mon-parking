@@ -84,6 +84,13 @@ export async function deleteEmployee(id, actor) {
 }
 
 export async function saveVehicle(lotId, data, id) {
+  const saved = await saveVehicleLocal(lotId, data, id)
+  try{ await pushVehicle(lotId, { ...data, price: Number(data.price) || 0 }, id) }
+  catch(error){ console.warn('Enregistrement serveur différé :', error.message) }
+  return saved
+}
+
+async function saveVehicleLocal(lotId, data, id) {
   if (id) {
     await db.vehicles.update(id, data)
     return id
@@ -104,6 +111,7 @@ export async function saveVehicle(lotId, data, id) {
 }
 
 export async function deleteVehicle(id) {
+  try{ await removeVehicle(id) }catch(error){ console.warn('Suppression serveur différée :', error.message) }
   await db.transaction('rw', db.vehicles, db.stockMoves, async () => {
     await db.vehicles.delete(id)
     await db.stockMoves.where('vehicleId').equals(id).delete()
@@ -111,6 +119,12 @@ export async function deleteVehicle(id) {
 }
 
 export async function saveClient(lotId, data, id) {
+  const saved = await saveClientLocal(lotId, data, id)
+  if(!id){ try{ await pushClient({ ...data, name: String(data.name||'').trim() }) }catch(error){ console.warn('Client non synchronisé :', error.message) } }
+  return saved
+}
+
+async function saveClientLocal(lotId, data, id) {
   if (id) {
     await db.clients.update(id, data)
     return id
