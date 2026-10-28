@@ -1,4 +1,5 @@
 import { db, uid, nowIso, hashPin, docNumber, authorize } from './db.js'
+import { pushVehicle, removeVehicle, pushClient } from './apiData.js'
 import { authRequest, notifyAuthChange } from './authSession.js'
 
 export async function createAdditionalLot(currentUser, { name, logo, city, currency }) {
