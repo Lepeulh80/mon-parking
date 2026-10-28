@@ -1,7 +1,7 @@
 {
   "name": "mon-parking",
   "private": true,
-  "version": "21.0.0",
+  "version": "22.0.0",
   "description": "MON PARKING — Suite de gestion de parkings automobiles (multi-parcs, ventes, locations, facturation, comptabilité)",
   "type": "module",
   "scripts": {
@@ -30,12 +30,15 @@
     "db:migrate": "node scripts/db-migrate.mjs",
     "test:pg": "node scripts/test-pg-stores.mjs",
     "db:setup": "node scripts/db-setup.mjs",
-    "db:backup": "node scripts/backup-neon.mjs"
+    "db:backup": "node scripts/backup-neon.mjs",
+    "r2:cors": "node scripts/r2-cors.mjs"
   },
   "engines": {
     "node": ">=22.23.0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1158.0",
+    "@aws-sdk/s3-request-presigner": "^3.1158.0",
     "@supabase/supabase-js": "^2.118.0",
     "@tesseract.js-data/eng": "^1.0.0",
     "dexie": "4.4.6",

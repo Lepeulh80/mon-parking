@@ -2,6 +2,7 @@ import { AuthStore } from './auth-store.mjs'
 import { PgAuthStore } from './auth-store-pg.mjs'
 import { PgBusinessStore } from './business-store-pg.mjs'
 import { createAuthServer } from './http.mjs'
+import { createR2 } from './r2.mjs'
 import { deploymentConfig } from './config.mjs'
 import { bootstrapAdmin } from './bootstrap.mjs'
 try {
@@ -16,7 +17,10 @@ try {
  const business=usePg?new PgBusinessStore(store.sql===undefined?undefined:store._sql,async()=>{}):null
  console.log(usePg?'Base : PostgreSQL (DATABASE_URL)':'Base : SQLite locale ('+config.dbPath+')')
  await bootstrapAdmin(store)
- const server=createAuthServer({store,origin:config.origin,distDir:config.distDir,tls:config.tls,business})
+ const media=createR2()
+ if(media)console.log(`Stockage R2 : bucket ${media.config.bucket}`)
+ else console.log('Stockage R2 : non configuré (photos locales uniquement)')
+ const server=createAuthServer({store,origin:config.origin,distDir:config.distDir,tls:config.tls,business,media})
  server.requestTimeout=15000;server.headersTimeout=10000
  // m9 : une erreur de listen fermait la base, puis SIGTERM la refermait et
  // levait « database is not open » dans le gestionnaire de signal.

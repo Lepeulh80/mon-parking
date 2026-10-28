@@ -19,6 +19,16 @@ services:
         value: "1"
       - key: AUTH_DB
         value: /app/.server-data/auth.sqlite
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
       - key: AUTH_2FA_KEY
         generateValue: true
       - key: ADMIN_USERNAME

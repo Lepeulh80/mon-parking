@@ -3,6 +3,7 @@ import { createServer as createTlsServer } from 'node:https'
 import { readFile,stat,realpath } from 'node:fs/promises'
 import { resolve,extname,sep } from 'node:path'
 import { AuthError } from './auth-store.mjs'
+import { allowedType, mediaKey, newKeyId } from './r2.mjs'
 import { hasPermission } from '../src/lib/permissions.js'
 export const COOKIE='__Host-mp_sid'
 // Le préfixe __Host- exige l'attribut Secure : un navigateur REJETTE un cookie
@@ -34,7 +35,7 @@ export const CSP=[
  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com",
  "manifest-src 'self'",
 ].join('; ')
-export function createAuthServer({store,origin,distDir=null,tls,business}){
+export function createAuthServer({store,origin,distDir=null,tls,business,media=null}){
  const expected=new URL(origin)
  if(expected.pathname!=='/'||!['https:','http:'].includes(expected.protocol))throw new Error('AUTH_ORIGIN must be an origin')
  if(expected.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(expected.hostname))throw new Error('HTTPS required outside loopback')
@@ -163,6 +164,39 @@ export function createAuthServer({store,origin,distDir=null,tls,business}){
      if(route==='clients'&&req.method==='POST'){if(account.role!=='admin'&&account.role!=='responsable')throw new AuthError(403,'Accès refusé.');return json(res,201,await business.createClient(lot,await body(req)))}
      if(route==='stats'&&req.method==='GET')return json(res,200,await business.stats(lot))
      throw new AuthError(404,'Route inconnue.')
+    }
+    if(media&&url.pathname.startsWith('/api/media/')){
+     const account=await store.authenticate(token),lot=account.lot_id
+     // Diagnostic sans secret : l'interface sait si le téléversement cloud est actif.
+     if(url.pathname==='/api/media/status'&&req.method==='GET')
+      return json(res,200,{enabled:!!media.config,bucket:media.config?media.config.bucket:null,publicUrl:media.config?(media.config.publicUrl||null):null})
+     if(!media.config)throw new AuthError(503,'Stockage R2 non configuré : R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY et R2_BUCKET sont absents.')
+     if(url.pathname==='/api/media/presign'&&req.method==='POST'){
+      if(account.role!=='admin'&&account.role!=='responsable'&&account.role!=='caissier')throw new AuthError(403,'Accès refusé.')
+      const input=await body(req)
+      if(!input.vehicleId)throw new AuthError(400,'Véhicule manquant.')
+      const contentType=String(input.contentType||'image/jpeg').toLowerCase()
+      if(!allowedType(contentType))throw new AuthError(415,'Format refusé : JPEG, PNG, WebP ou AVIF uniquement.')
+      const key=mediaKey(lot,input.vehicleId,contentType,newKeyId(),input.fingerprint||'')
+      const uploadUrl=await media.presign(key,contentType,600)
+      return json(res,200,{key,uploadUrl,publicUrl:media.publicUrl(key),expiresIn:600,headers:{'Content-Type':contentType}})
+     }
+     if(url.pathname==='/api/media/complete'&&req.method==='POST'){
+      if(!business)throw new AuthError(503,'Base métier indisponible.')
+      const input=await body(req)
+      if(!input.key||!input.vehicleId)throw new AuthError(400,'Référence de photo incomplète.')
+      const probe=await media.head(input.key)
+      if(!probe.exists)throw new AuthError(409,'Objet absent du bucket : téléversement incomplet.')
+      const row=await business.addVehiclePhoto(lot,{...input,url:input.url||media.publicUrl(input.key)||'',userId:account.id})
+      return json(res,201,{...row,size:probe.size,contentType:probe.contentType})
+     }
+     if(url.pathname.startsWith('/api/media/photo/')&&req.method==='DELETE'){
+      if(account.role!=='admin'&&account.role!=='responsable')throw new AuthError(403,'Accès refusé.')
+      const row=await business.deleteVehiclePhoto(lot,decodeURIComponent(url.pathname.slice('/api/media/photo/'.length)))
+      if(row.key)await media.remove(row.key).catch(()=>{})
+      return json(res,200,{ok:true})
+     }
+     throw new AuthError(404,'Route média inconnue.')
     }
     if(url.pathname==='/api/admin/users'&&req.method==='POST')return json(res,201,await store.createUser(token,await body(req)))
     if(url.pathname==='/api/admin/lots'&&req.method==='POST')return json(res,201,await store.createLot(token,await body(req)))

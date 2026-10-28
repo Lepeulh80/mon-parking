@@ -27,3 +27,10 @@ export const removeVehicle = (id) => authRequest(`/api/data/vehicles/${encodeURI
 export const pushClient = (data) => authRequest('/api/data/clients', { method: 'POST', body: data })
 export const pushSale = (data) => authRequest('/api/data/sales', { method: 'POST', body: data })
 export const fetchStats = () => authRequest('/api/data/stats')
+
+// Téléversement des photos : URL PUT présignée côté serveur, dépôt direct dans
+// R2 depuis le navigateur (le secret R2 ne quitte jamais Render).
+export const mediaStatus = () => authRequest('/api/media/status')
+export const presignVehiclePhoto = (data) => authRequest('/api/media/presign', { method: 'POST', body: data })
+export const completeVehiclePhoto = (data) => authRequest('/api/media/complete', { method: 'POST', body: data })
+export const deleteVehiclePhotoRemote = (id) => authRequest(`/api/media/photo/${encodeURIComponent(id)}`, { method: 'DELETE' })

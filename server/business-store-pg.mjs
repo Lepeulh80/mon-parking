@@ -171,6 +171,35 @@ export class PgBusinessStore {
     return rows.map((r) => ({ id: r.id, lotId: r.lot_id, saleId: r.sale_id, amount: num(r.amount), method: r.method, date: num(r.date) }))
   }
 
+  // ------------------------------- photos ---------------------------------
+  // Les images vivent dans R2 ; la base ne garde que la clé, l'URL publique et
+  // les métadonnées. Aucune donnée binaire en PostgreSQL.
+  async addVehiclePhoto(lotId, input) {
+    const vehicle = await this.sql.one('SELECT id FROM vehicles WHERE id=? AND lot_id=?', [input.vehicleId, lotId])
+    if (!vehicle) { const e = new Error('Véhicule introuvable sur ce parking.'); e.status = 404; throw e }
+    const id = input.id || randomUUID()
+    const now = Date.now()
+    const kind = String(input.kind || 'photo')
+    const pos = await this.sql.one('SELECT COALESCE(MAX(sort),-1)+1 AS next FROM vehicle_photos WHERE vehicle_id=? AND kind=?', [input.vehicleId, kind])
+    const sort = Number.isInteger(input.sort) ? input.sort : Number(pos?.next || 0)
+    const data = { key: input.key || '', name: input.name || '', width: Number(input.width || 0), height: Number(input.height || 0), bytes: Number(input.bytes || 0), userId: input.userId || null }
+    await this.sql.run('INSERT INTO vehicle_photos(id,lot_id,vehicle_id,kind,sort,url,data,created_at) VALUES(?,?,?,?,?,?,?,?)',
+      [id, lotId, input.vehicleId, kind, sort, String(input.url || ''), JSON.stringify(data), now])
+    return { id, lotId, vehicleId: input.vehicleId, kind, sort, url: String(input.url || ''), ...data }
+  }
+
+  async listVehiclePhotos(lotId, vehicleId) {
+    const rows = await this.sql.all('SELECT * FROM vehicle_photos WHERE lot_id=? AND vehicle_id=? ORDER BY kind, sort', [lotId, vehicleId])
+    return rows.map((r) => ({ ...(r.data || {}), id: r.id, lotId: r.lot_id, vehicleId: r.vehicle_id, kind: r.kind, sort: num(r.sort), url: r.url, createdAt: num(r.created_at) }))
+  }
+
+  async deleteVehiclePhoto(lotId, id) {
+    const row = await this.sql.one('SELECT * FROM vehicle_photos WHERE id=? AND lot_id=?', [id, lotId])
+    if (!row) { const e = new Error('Photo introuvable.'); e.status = 404; throw e }
+    await this.sql.run('DELETE FROM vehicle_photos WHERE id=? AND lot_id=?', [id, lotId])
+    return { id, key: (row.data || {}).key || '' }
+  }
+
   // -------------------------------- tickets --------------------------------
   async listTickets(lotId, { status } = {}) {
     const params = [lotId], where = ['lot_id=?']

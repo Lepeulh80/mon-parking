@@ -15,6 +15,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, uid, nowIso } from './db.js'
 import { encryptText, isEncryptedValue, isUnlocked, openMedia, touch } from './photoCrypto.js'
 import {
+import { presignVehiclePhoto, completeVehiclePhoto, deleteVehiclePhotoRemote } from './apiData.js'
   FRAME, PHOTO, MAX_IMAGE_EDGE, THUMB_EDGE, QUALITY,
   isAcceptedMime, isTooLarge, formatBytes, nextSort, orderFilesByName,
 } from './photoMath.js'
@@ -52,6 +53,29 @@ export async function prepareImage(file) {
 // ---------- écriture ----------
 // files : FileList ou tableau. kind : 'photo' (galerie) ou 'frame' (séquence 360°).
 // Retourne le détail des refus pour que l'interface puisse les afficher.
+// Copie cloud : l'image compressée part directement dans R2. Si le coffre du
+// parking est verrouillé, l'image locale est chiffrée (AES-GCM) et n'est donc
+// PAS téléversée en clair : on le note sur la ligne plutôt que de casser le
+// chiffrement. Un échec réseau ne fait jamais échouer l'ajout local.
+async function mirrorPhoto(vehicleId, row, prepared) {
+  try {
+    const contentType = String(prepared.type || 'image/jpeg').toLowerCase()
+    const signed = await presignVehiclePhoto({ vehicleId, contentType, kind: row.kind, fingerprint: prepared.name || row.id })
+    const blob = await (await fetch(prepared.data)).blob()
+    const put = await fetch(signed.uploadUrl, { method: 'PUT', headers: signed.headers || { 'Content-Type': contentType }, body: blob })
+    if (!put.ok) throw new Error(`R2 a refusé le dépôt (${put.status}).`)
+    const saved = await completeVehiclePhoto({
+      vehicleId, kind: row.kind, sort: row.sort, key: signed.key, url: signed.publicUrl,
+      width: prepared.width, height: prepared.height, bytes: prepared.bytes, name: prepared.name,
+    })
+    await db.vehiclePhotos.update(row.id, { remoteUrl: signed.publicUrl, remoteKey: signed.key, remoteId: saved?.id || null, remoteAt: nowIso() })
+    return true
+  } catch (error) {
+    await db.vehiclePhotos.update(row.id, { remoteError: String(error?.message || error).slice(0, 160) })
+    return false
+  }
+}
+
 export async function addVehiclePhotos(lotId, vehicleId, files, { kind = PHOTO } = {}) {
   const list = orderFilesByName([...(files || [])])
   if (!list.length) return { added: [], rejected: [] }
@@ -78,6 +102,9 @@ export async function addVehiclePhotos(lotId, vehicleId, files, { kind = PHOTO }
       }
       await db.vehiclePhotos.add(row)
       added.push(row)
+      // Chiffrée => jamais envoyée en clair ; en clair => copie cloud.
+      if (sealed) await db.vehiclePhotos.update(row.id, { remoteError: 'Coffre verrouillé : photo non téléversée' })
+      else await mirrorPhoto(vehicleId, row, prepared)
     } catch (error) {
       rejected.push({ name: file?.name || 'fichier', reason: error.message })
     }
