@@ -1,7 +1,7 @@
 {
   "name": "mon-parking",
   "private": true,
-  "version": "23.1.0",
+  "version": "23.1.1",
   "description": "MON PARKING — Suite de gestion de parkings automobiles (multi-parcs, ventes, locations, facturation, comptabilité)",
   "type": "module",
   "scripts": {
